@@ -39,7 +39,6 @@
     </div>
 
     <!-- =========== ÁREA DA INTERFACE (APP) =========== -->
-    <!-- hidden por padrão até o login validar -->
     <div class="main-ui hidden max-w-6xl mx-auto p-4 md:p-6">
         
         <!-- Cabeçalho -->
@@ -69,6 +68,9 @@
             </button>
             <button onclick="switchTab('tab-historico')" id="nav-historico" class="tab-btn flex-1 py-4 text-center text-gray-600 hover:text-blue-800">
                 🗂️ Histórico (Nuvem)
+            </button>
+            <button onclick="switchTab('tab-conta')" id="nav-conta" class="tab-btn flex-1 py-4 text-center text-gray-600 hover:text-blue-800">
+                👤 Minha Conta
             </button>
         </div>
 
@@ -146,17 +148,42 @@
                         <thead>
                             <tr class="bg-gray-100 text-gray-700">
                                 <th class="p-3 border text-left">Data do Relatório</th>
-                                <th class="p-3 border text-center">Total de Pedidos Parados</th>
+                                <th class="p-3 border text-center">Total</th>
+                                <th class="p-3 border text-left">Criado por</th>
                                 <th class="p-3 border text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
-                            <tr><td colspan="3" class="p-4 text-center">Carregando dados da nuvem...</td></tr>
+                            <tr><td colspan="4" class="p-4 text-center">Carregando dados da nuvem...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+
+        <!-- ABA 3: MINHA CONTA -->
+        <div id="tab-conta" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Alterar Senha de Acesso</h2>
+                <p class="text-gray-500 text-sm mb-6">Digite sua nova senha abaixo para atualizar suas credenciais.</p>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
+                    <input type="password" id="newPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mínimo de 6 caracteres">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Confirme a Nova Senha</label>
+                    <input type="password" id="confirmPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite novamente">
+                </div>
+
+                <button onclick="alterarSenha()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition shadow">
+                    Atualizar Senha
+                </button>
+                <p id="passwordMsg" class="text-center font-bold mt-4 hidden"></p>
+            </div>
+        </div>
+
     </div> 
 
     <!-- =========== ÁREA DO PDF (ISOLADA DO LAYOUT) =========== -->
@@ -168,16 +195,12 @@
         
         <div style="margin-bottom: 40px;">
             <h2 style="font-size: 20px; font-weight: bold; color: #1e3a8a; border-left: 4px solid #1e3a8a; padding-left: 10px; margin-bottom: 20px;">Síntese do Cenário Operacional</h2>
-            <div id="executiveAnalysis" class="pdf-text-block" style="text-align: justify; font-size: 16px; line-height: 1.6; color: #374151;">
-                <!-- Análise gerada via JS -->
-            </div>
+            <div id="executiveAnalysis" class="pdf-text-block" style="text-align: justify; font-size: 16px; line-height: 1.6; color: #374151;"></div>
         </div>
 
         <div>
             <h2 style="font-size: 20px; font-weight: bold; color: #1f2937; margin-bottom: 20px;">Quadro Resumo (Ocorrências)</h2>
-            <table id="pdfTable">
-                <!-- Tabela gerada via JS -->
-            </table>
+            <table id="pdfTable"></table>
         </div>
     </div>
 

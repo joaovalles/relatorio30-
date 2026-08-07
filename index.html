@@ -3,72 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Pedidos 30h+ - PRO Final</title>
-    <!-- Bibliotecas -->
+    <title>Análise de Pedidos 30h+ - PRO Cloud</title>
+    
+    <!-- Bibliotecas externas -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <style>
-        .dark-table th { background-color: #3f3f2b; color: #facc15; border: 1px solid #52525b; text-align: center; }
-        .dark-table td { background-color: #18181b; color: #e4e4e7; border: 1px solid #52525b; padding: 8px; text-align: center; }
-        .dark-table td:first-child { text-align: left; }
-        
-        /* Estilos das abas */
-        .tab-btn { transition: all 0.3s; }
-        .tab-btn.active { border-bottom: 4px solid #3b82f6; color: #1e3a8a; font-weight: bold; }
-
-        /* ========= CONFIGURAÇÕES RIGOROSAS PARA O PDF ========= */
-        /* Oculta tudo na tela normal que for do PDF */
-        #pdfContent { display: none; }
-        
-        /* Quando a classe is-printing for ativada, oculta a UI normal e exibe o PDF */
-        body.is-printing { background: white !important; overflow: visible !important; }
-        body.is-printing .main-ui { display: none !important; }
-        
-        body.is-printing #pdfContent { 
-            display: block; 
-            width: 100%;
-            background: white; 
-            color: black; 
-            font-family: Arial, sans-serif; 
-            padding: 10px;
-        }
-
-        /* Regras rígidas para a Tabela não cortar as linhas pela metade */
-        #pdfTable { width: 100%; border-collapse: collapse; page-break-inside: auto; margin-bottom: 30px;}
-        #pdfTable tr { page-break-inside: avoid !important; page-break-after: auto !important; }
-        #pdfTable thead { display: table-header-group; }
-        #pdfTable tfoot { display: table-footer-group; }
-        
-        #pdfTable th { background-color: #f3f4f6; color: #111827; border: 1px solid #d1d5db; padding: 12px; text-align: center; font-weight: bold;}
-        #pdfTable td { border: 1px solid #d1d5db; padding: 10px; text-align: center; color: #374151;}
-        #pdfTable td:first-child { text-align: left; font-weight: bold;}
-
-        /* Regras para os parágrafos não cortarem */
-        .pdf-text-block p { page-break-inside: avoid; margin-bottom: 1rem; }
-        
-    </style>
+    <!-- Arquivo CSS Externo -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans">
 
+    <!-- =========== TELA DE LOGIN =========== -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-900 absolute inset-0">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-2xl font-bold text-center mb-6 text-blue-900">Acesso Restrito</h2>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">E-mail</label>
+                <input type="email" id="emailInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="seu@email.com">
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Senha</label>
+                <input type="password" id="passwordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+            </div>
+            
+            <button onclick="fazerLogin()" id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition">
+                Entrar
+            </button>
+            <p id="loginError" class="text-red-500 text-sm mt-4 hidden text-center font-bold">Credenciais inválidas.</p>
+        </div>
+    </div>
+
     <!-- =========== ÁREA DA INTERFACE (APP) =========== -->
-    <div class="main-ui max-w-6xl mx-auto p-4 md:p-6">
+    <!-- hidden por padrão até o login validar -->
+    <div class="main-ui hidden max-w-6xl mx-auto p-4 md:p-6">
+        
         <!-- Cabeçalho -->
         <header class="bg-blue-900 text-white p-6 rounded-t-lg shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="text-center md:text-left">
                 <h1 class="text-2xl font-bold">Dashboard - Pedidos Parados (30h+)</h1>
-                <p class="text-sm opacity-80">Gestão Operacional Profissional</p>
+                <p class="text-sm opacity-80">Gestão Operacional na Nuvem</p>
             </div>
-            <div class="flex gap-4">
+            <div class="flex flex-wrap justify-center gap-4">
                 <button onclick="saveCurrentReport()" id="btnSave" class="hidden bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-4 py-2 rounded font-bold shadow transition">
-                    💾 Salvar no Histórico
+                    💾 Salvar no Firebase
                 </button>
                 <label class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded cursor-pointer transition font-semibold flex items-center justify-center shadow-lg">
-                    <span>📁 Nova Análise (Planilha)</span>
+                    <span>📁 Nova Análise</span>
                     <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
                 </label>
+                <button onclick="fazerLogout()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded cursor-pointer transition font-bold shadow-lg">
+                    Sair
+                </button>
             </div>
         </header>
 
@@ -78,20 +68,18 @@
                 📊 Visão Atual
             </button>
             <button onclick="switchTab('tab-historico')" id="nav-historico" class="tab-btn flex-1 py-4 text-center text-gray-600 hover:text-blue-800">
-                🗂️ Gerenciar Histórico
+                🗂️ Histórico (Nuvem)
             </button>
         </div>
 
         <!-- ABA 1: ANÁLISE -->
         <div id="tab-analise" class="flex flex-col gap-6">
-            <!-- Aviso quando vazio -->
             <div id="emptyState" class="bg-white p-12 text-center rounded-lg shadow-md text-gray-500">
                 <span class="text-4xl mb-4 block">📈</span>
                 <p class="text-lg">Carregue uma planilha ou selecione um relatório do histórico para visualizar os dados.</p>
             </div>
 
             <div id="uiArea" class="hidden flex-col gap-6">
-                <!-- Info do Relatório Carregado -->
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-blue-800 flex justify-between items-center">
                     <p id="currentReportLabel" class="font-semibold">Relatório em exibição: Análise não salva.</p>
                 </div>
@@ -108,13 +96,11 @@
                                     <th>QTD</th>
                                 </tr>
                             </thead>
-                            <tbody id="tableBody">
-                                <!-- Preenchido via JS -->
-                            </tbody>
+                            <tbody id="tableBody"></tbody>
                         </table>
                     </div>
 
-                    <!-- Texto para Copiar -->
+                    <!-- Mensagem Rápida -->
                     <div class="bg-white p-6 rounded-lg shadow-md flex flex-col border border-gray-300">
                         <h2 class="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Mensagem para a Equipe</h2>
                         <textarea id="reportText" class="w-full flex-grow p-4 bg-gray-50 border rounded text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none" readonly></textarea>
@@ -130,22 +116,18 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-lg shadow-md border border-gray-300">
                         <h3 class="text-lg font-bold mb-4 text-center text-gray-700">Volume por Setor</h3>
-                        <div class="relative h-64">
-                            <canvas id="sectorChart"></canvas>
-                        </div>
+                        <div class="relative h-64"><canvas id="sectorChart"></canvas></div>
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-md border border-gray-300">
                         <h3 class="text-lg font-bold mb-4 text-center text-gray-700">Gargalos por Status (Ativos)</h3>
-                        <div class="relative h-64">
-                            <canvas id="statusChart"></canvas>
-                        </div>
+                        <div class="relative h-64"><canvas id="statusChart"></canvas></div>
                     </div>
                 </div>
 
-                <!-- Botão do PDF -->
+                <!-- Botão Relatório Gerencial -->
                 <div class="flex">
                     <button onclick="generatePDF()" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded font-bold transition shadow-lg text-lg">
-                        📄 Baixar Relatório PDF (100% Formatado)
+                        📄 Baixar Relatório PDF (Executivo)
                     </button>
                 </div>
             </div>
@@ -156,7 +138,7 @@
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
                     <h2 class="text-2xl font-bold text-gray-800">Relatórios Gerados</h2>
-                    <p class="text-gray-500">Armazenados localmente no seu navegador</p>
+                    <p class="text-gray-500">Armazenados de forma segura no Firebase</p>
                 </div>
                 
                 <div class="overflow-x-auto">
@@ -169,473 +151,37 @@
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
-                            <!-- Preenchido via JS -->
+                            <tr><td colspan="3" class="p-4 text-center">Carregando dados da nuvem...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-    </div> <!-- FIM MAIN UI -->
+    </div> 
 
-
-    <!-- =========== ÁREA DO PDF (ISOLADA) =========== -->
-    <!-- Colocada fora da div principal para evitar herdar "overflow" ou limites de tamanho -->
+    <!-- =========== ÁREA DO PDF (ISOLADA DO LAYOUT) =========== -->
     <div id="pdfContent">
-        <!-- Cabeçalho -->
         <div style="text-align: center; border-bottom: 2px solid #d1d5db; padding-bottom: 20px; margin-bottom: 30px;">
             <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">Relatório de Análise Operacional (30h+)</h1>
             <p id="pdfDate" style="color: #6b7280; font-size: 14px; margin-top: 10px;"></p>
         </div>
         
-        <!-- Texto de Análise -->
         <div style="margin-bottom: 40px;">
             <h2 style="font-size: 20px; font-weight: bold; color: #1e3a8a; border-left: 4px solid #1e3a8a; padding-left: 10px; margin-bottom: 20px;">Síntese do Cenário Operacional</h2>
             <div id="executiveAnalysis" class="pdf-text-block" style="text-align: justify; font-size: 16px; line-height: 1.6; color: #374151;">
-                <!-- Preenchido via JS -->
+                <!-- Análise gerada via JS -->
             </div>
         </div>
 
-        <!-- Tabela -->
         <div>
             <h2 style="font-size: 20px; font-weight: bold; color: #1f2937; margin-bottom: 20px;">Quadro Resumo (Ocorrências)</h2>
             <table id="pdfTable">
-                <!-- Copiado do JS -->
+                <!-- Tabela gerada via JS -->
             </table>
         </div>
     </div>
 
-
-    <script>
-        // CONFIGURAÇÕES BASE
-        const tableConfig = [
-            { status: 'FATURADO (SC)', setor: 'ESTOQUE SC' },
-            { status: 'EM SEPARAÇÃO (SC)', setor: 'ESTOQUE SC' },
-            { status: 'AGUARDANDO COLETA (SC)', setor: 'ESTOQUE SC' },
-            { status: 'VERIFICADO (SC)', setor: 'ESTOQUE SC' },
-            { status: 'HD BRASIL ESTÁ MONTANDO SUA MÁQUINA (SC)', setor: 'ESTOQUE SC' },
-            { status: 'PAGAMENTO APROVADO (SC)', setor: 'ESTOQUE SC' },
-            { status: 'EM PROCESSAMENTO (SC)', setor: 'ESTOQUE SC' },
-            { status: 'PENDENTE TROCA (SC)', setor: 'ESTOQUE SC' },
-            { status: 'AGUARDANDO REVISÃO (SC)', setor: 'ATENDIMENTO' },
-            { status: 'RETIDO (SC)', setor: 'ATENDIMENTO' },
-            { status: 'AGUARDANDO DISPONIBILIDADE (SC)', setor: 'ATENDIMENTO' },
-            { status: 'INCOMPATÍVEL (SC)', setor: 'ATENDIMENTO' },
-            { status: 'PENDENTE REEMBOLSO (SC)', setor: 'ATENDIMENTO' }
-        ];
-
-        let currentCounts = {};
-        let chartInstanceSector = null;
-        let chartInstanceStatus = null;
-        let activeReportId = null; 
-
-        // INICIALIZAÇÃO
-        document.addEventListener('DOMContentLoaded', () => {
-            initCounts();
-            renderHistoryTable();
-        });
-
-        function initCounts() {
-            tableConfig.forEach(item => currentCounts[item.status] = 0);
-        }
-
-        // CONTROLE DE ABAS
-        function switchTab(tabId) {
-            document.getElementById('tab-analise').classList.add('hidden');
-            document.getElementById('tab-historico').classList.add('hidden');
-            document.getElementById(tabId).classList.remove('hidden');
-
-            document.getElementById('nav-analise').classList.remove('active');
-            document.getElementById('nav-historico').classList.remove('active');
-            
-            if(tabId === 'tab-analise') document.getElementById('nav-analise').classList.add('active');
-            if(tabId === 'tab-historico') {
-                document.getElementById('nav-historico').classList.add('active');
-                renderHistoryTable();
-            }
-        }
-
-        // LEITURA DO ARQUIVO
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                
-                const sheetName = workbook.SheetNames.includes('PEDIDOS') ? 'PEDIDOS' : workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                processNewData(jsonData);
-            };
-            reader.readAsArrayBuffer(file);
-            event.target.value = ''; // Reset do input
-        }
-
-        function processNewData(data) {
-            initCounts();
-            activeReportId = null; 
-
-            data.forEach(row => {
-                const rowNormalized = {};
-                for(let key in row) {
-                    rowNormalized[key.trim().toLowerCase()] = row[key];
-                }
-
-                const idPedido = rowNormalized['idvenda'] || rowNormalized['pedido'] || '';
-                const statusStr = (rowNormalized['status'] || '').toString().trim().toUpperCase();
-                
-                if(!idPedido && statusStr === '') return;
-
-                for (let config of tableConfig) {
-                    if (statusStr.includes(config.status) || config.status.includes(statusStr)) {
-                        currentCounts[config.status]++;
-                        break;
-                    }
-                }
-            });
-
-            document.getElementById('currentReportLabel').innerText = "Relatório em exibição: Nova análise (Não salva no histórico)";
-            document.getElementById('btnSave').classList.remove('hidden');
-            
-            updateDashboard();
-            switchTab('tab-analise');
-        }
-
-        // ATUALIZAÇÃO DA INTERFACE
-        function updateDashboard() {
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('uiArea').classList.remove('hidden');
-            document.getElementById('uiArea').classList.add('flex');
-
-            renderTable();
-            generateTextForTeam();
-            renderCharts();
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            tableConfig.forEach(config => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${config.status}</td>
-                    <td>${config.setor}</td>
-                    <td class="font-bold text-lg">${currentCounts[config.status]}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // MENSAGEM WHATSAPP
-        function generateTextForTeam() {
-            const now = new Date();
-            const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            let texto = `Bom dia meus consagrados!
-
-`;
-            texto += `Segue relação de 30+ para avaliação, retirado as ${hora}, podem ter ocorrido atualizações!
-
-`;
-
-            texto += `Estoque SC @Mario Tobal Se precisar de uma mão só avisar!
-
-`;
-            tableConfig.forEach(config => {
-                if (config.setor === 'ESTOQUE SC' && currentCounts[config.status] > 0) {
-                    texto += `${config.status}    ${currentCounts[config.status]}
-`;
-                }
-            });
-
-            texto += `
-ATENDIMENTO - Já em validação, quebras bem controladas, e validando casos de pendente reembolso e retido para a finalização.
-
-`;
-            tableConfig.forEach(config => {
-                if (config.setor === 'ATENDIMENTO' && currentCounts[config.status] > 0) {
-                    texto += `${config.status}    ${currentCounts[config.status]}
-`;
-                }
-            });
-
-            texto += `
-Segue planilha para acompanhamento:
-RELATÓRIO 30+`;
-
-            document.getElementById('reportText').value = texto;
-        }
-
-        function copyText() {
-            const textToCopy = document.getElementById('reportText');
-            textToCopy.select();
-            document.execCommand('copy');
-            
-            const msg = document.getElementById('copyMsg');
-            msg.classList.remove('hidden');
-            setTimeout(() => msg.classList.add('hidden'), 3000);
-        }
-
-        // GRÁFICOS
-        function renderCharts() {
-            if (chartInstanceSector) chartInstanceSector.destroy();
-            if (chartInstanceStatus) chartInstanceStatus.destroy();
-
-            let scTotal = 0;
-            let atTotal = 0;
-            tableConfig.forEach(c => {
-                if(c.setor === 'ESTOQUE SC') scTotal += currentCounts[c.status];
-                if(c.setor === 'ATENDIMENTO') atTotal += currentCounts[c.status];
-            });
-
-            const ctxSector = document.getElementById('sectorChart').getContext('2d');
-            chartInstanceSector = new Chart(ctxSector, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Estoque SC', 'Atendimento'],
-                    datasets: [{
-                        data: [scTotal, atTotal],
-                        backgroundColor: ['#2563eb', '#16a34a'],
-                        borderWidth: 1
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            const statusLabels = [];
-            const statusData = [];
-            tableConfig.forEach(c => {
-                if (currentCounts[c.status] > 0) {
-                    let shortLabel = c.status.replace(' (SC)', '');
-                    statusLabels.push(shortLabel);
-                    statusData.push(currentCounts[c.status]);
-                }
-            });
-
-            const ctxStatus = document.getElementById('statusChart').getContext('2d');
-            chartInstanceStatus = new Chart(ctxStatus, {
-                type: 'bar',
-                data: {
-                    labels: statusLabels,
-                    datasets: [{
-                        label: 'Qtd de Pedidos',
-                        data: statusData,
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 4
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
-            });
-        }
-
-        // SISTEMA DE HISTÓRICO
-        const STORAGE_KEY = 'relatorios_30h_history';
-
-        function getHistory() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-
-        function saveCurrentReport() {
-            let total = 0;
-            tableConfig.forEach(c => total += currentCounts[c.status]);
-
-            const now = new Date();
-            const reportData = {
-                id: now.getTime(),
-                dateLabel: now.toLocaleString('pt-BR'),
-                total: total,
-                counts: { ...currentCounts } 
-            };
-
-            const history = getHistory();
-            history.unshift(reportData); 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-
-            alert("Relatório salvo no histórico com sucesso!");
-            
-            document.getElementById('btnSave').classList.add('hidden');
-            document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Salvo em ${reportData.dateLabel}`;
-            activeReportId = reportData.id;
-        }
-
-        function renderHistoryTable() {
-            const history = getHistory();
-            const tbody = document.getElementById('historyTableBody');
-            tbody.innerHTML = '';
-
-            if(history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Nenhum relatório salvo no histórico ainda.</td></tr>`;
-                return;
-            }
-
-            history.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold">${item.dateLabel}</td>
-                    <td class="p-3 text-center"><span class="bg-gray-200 px-3 py-1 rounded-full text-gray-700 font-bold">${item.total}</span></td>
-                    <td class="p-3 text-center flex justify-center gap-2">
-                        <button onclick="loadReport(${item.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold shadow transition">
-                            👁️ Visualizar
-                        </button>
-                        <button onclick="deleteReport(${item.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-bold shadow transition">
-                            🗑️ Excluir
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function loadReport(id) {
-            const history = getHistory();
-            const report = history.find(r => r.id === id);
-            
-            if(report) {
-                currentCounts = { ...report.counts };
-                activeReportId = report.id;
-                
-                document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Arquivo de ${report.dateLabel}`;
-                document.getElementById('btnSave').classList.add('hidden'); 
-                
-                updateDashboard();
-                switchTab('tab-analise');
-            }
-        }
-
-        function deleteReport(id) {
-            if(confirm("Tem certeza que deseja excluir este relatório do histórico?")) {
-                let history = getHistory();
-                history = history.filter(r => r.id !== id);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-                
-                if(activeReportId === id) {
-                    document.getElementById('uiArea').classList.add('hidden');
-                    document.getElementById('uiArea').classList.remove('flex');
-                    document.getElementById('emptyState').classList.remove('hidden');
-                    activeReportId = null;
-                }
-                
-                renderHistoryTable();
-            }
-        }
-
-        // PDF GERADOR
-        function generateAnalysis() {
-            let total = 0;
-            let scTotal = 0;
-            let atTotal = 0;
-            let statusArray = [];
-
-            tableConfig.forEach(c => {
-                let qtd = currentCounts[c.status];
-                total += qtd;
-                if (c.setor === 'ESTOQUE SC') scTotal += qtd;
-                if (c.setor === 'ATENDIMENTO') atTotal += qtd;
-                
-                if (qtd > 0) {
-                    statusArray.push({ status: c.status, setor: c.setor, qtd: qtd });
-                }
-            });
-
-            statusArray.sort((a, b) => b.qtd - a.qtd);
-
-            const analysisContainer = document.getElementById('executiveAnalysis');
-            analysisContainer.innerHTML = '';
-
-            if (total === 0) {
-                analysisContainer.innerHTML = `<p>Atualmente, não há pedidos com mais de 30 horas de atraso registrados no sistema. O fluxo operacional encontra-se totalmente normalizado.</p>`;
-                return;
-            }
-
-            let setorCritico = scTotal > atTotal ? 'ESTOQUE SC' : (atTotal > scTotal ? 'ATENDIMENTO' : 'ambos os setores (de forma equilibrada)');
-            let percentualCritico = Math.round((Math.max(scTotal, atTotal) / total) * 100);
-            
-            let p1 = `<p>O cenário atual reporta um acumulado de <strong>${total} pedidos</strong> com tempo de permanência superior a 30 horas. A maior concentração de retenções recai sob o setor de <strong>${setorCritico}</strong>, respondendo por aproximadamente <strong>${percentualCritico}%</strong> do volume total travado.</p>`;
-
-            let p2 = '';
-            if (statusArray.length > 0) {
-                let principal = statusArray[0];
-                p2 = `<p>O <strong>maior gargalo de produtividade</strong> neste momento localiza-se na fila de <em>${principal.status}</em>, que retém <strong>${principal.qtd} pedidos</strong> isoladamente. Trata-se do ponto de maior impacto operacional, exigindo intervenção rápida para garantir o fluxo logístico.</p>`;
-            }
-
-            let p3 = '';
-            if (statusArray.length > 1) {
-                let secundarios = statusArray.slice(1, 3).map(s => `<em>${s.status}</em> (${s.qtd})`).join(' e ');
-                p3 = `<p>Adicionalmente, os status de ${secundarios} devem ser tratados como <strong>pontos de atenção estratégicos</strong>. Sugere-se o monitoramento focado nestas categorias nas próximas horas para impedir o efeito cascata nas esteiras operacionais.</p>`;
-            }
-
-            analysisContainer.innerHTML = p1 + p2 + p3;
-        }
-
-        function generatePDF() {
-            // Rola a página para o topo absoluto para evitar o bug do espaço em branco do html2pdf
-            window.scrollTo(0, 0);
-
-            generateAnalysis();
-
-            const pdfTable = document.getElementById('pdfTable');
-            // Monta o thead e tbody para ajudar o gerador de pdf a entender a tabela
-            let tableHTML = `
-                <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Setor Responsável</th>
-                        <th>QTD</th>
-                    </tr>
-                </thead>
-                <tbody>
-            `;
-            tableConfig.forEach(config => {
-                tableHTML += `
-                    <tr>
-                        <td>${config.status}</td>
-                        <td>${config.setor}</td>
-                        <td style="font-weight: bold;">${currentCounts[config.status]}</td>
-                    </tr>
-                `;
-            });
-            tableHTML += `</tbody>`;
-            pdfTable.innerHTML = tableHTML;
-
-            let dataImpressao = new Date().toLocaleString('pt-BR');
-            if(activeReportId) {
-                const history = getHistory();
-                const report = history.find(r => r.id === activeReportId);
-                if(report) dataImpressao = report.dateLabel;
-            }
-
-            document.getElementById('pdfDate').innerText = `Documento referente a: ${dataImpressao}`;
-
-            // Ativa o modo de impressão (esconde a UI e mostra a div do PDF)
-            document.body.classList.add('is-printing');
-            
-            const element = document.getElementById('pdfContent');
-            
-            const opt = {
-                margin:       15, // margem de 15mm nas bordas da página
-                filename:     `Analise_Gerencial_${dataImpressao.replace(/[/:, ]/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // scrollY: 0 impede o espaço em branco no topo
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['css', 'legacy'] }
-            };
-
-            // Gera e volta tudo ao normal
-            html2pdf().set(opt).from(element).save().then(() => {
-                document.body.classList.remove('is-printing');
-            });
-        }
-    </script>
+    <!-- Arquivo JS Externo -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>

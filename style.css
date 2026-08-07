@@ -11,10 +11,8 @@
 #loginScreen { z-index: 9999; }
 
 /* ========= CONFIGURAÇÕES RIGOROSAS PARA O PDF ========= */
-/* Oculta tudo na tela normal que for pertinente apenas ao PDF */
 #pdfContent { display: none; }
 
-/* Quando o gerador for ativado, inverte a exibição */
 body.is-printing { background: white !important; overflow: visible !important; }
 body.is-printing .main-ui { display: none !important; }
 
@@ -27,7 +25,6 @@ body.is-printing #pdfContent {
     padding: 10px;
 }
 
-/* Regras de Quebra de Página da Tabela PDF */
 #pdfTable { width: 100%; border-collapse: collapse; page-break-inside: auto; margin-bottom: 30px;}
 #pdfTable tr { page-break-inside: avoid !important; page-break-after: auto !important; }
 #pdfTable thead { display: table-header-group; }
@@ -37,5 +34,4 @@ body.is-printing #pdfContent {
 #pdfTable td { border: 1px solid #d1d5db; padding: 10px; text-align: center; color: #374151;}
 #pdfTable td:first-child { text-align: left; font-weight: bold;}
 
-/* Regras para os parágrafos não cortarem */
 .pdf-text-block p { page-break-inside: avoid; margin-bottom: 1rem; }

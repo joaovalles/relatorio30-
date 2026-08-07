@@ -1,7 +1,7 @@
-// Importações do Firebase SDK Modular (Com Auth e Firestore)
+// Importações do Firebase SDK Modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
 // Suas credenciais do Firebase
 const firebaseConfig = {
@@ -45,13 +45,20 @@ let historyCache = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     initCounts();
+    
+    // Preenche o e-mail salvo anteriormente se houver
+    const savedEmail = localStorage.getItem('saved_user_email');
+    if (savedEmail) {
+        document.getElementById('emailInput').value = savedEmail;
+        document.getElementById('rememberEmail').checked = true;
+    }
 });
 
 function initCounts() {
     tableConfig.forEach(item => currentCounts[item.status] = 0);
 }
 
-// ================= SISTEMA DE LOGIN =================
+// ================= SISTEMA DE LOGIN E SESSÃO =================
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -66,6 +73,7 @@ onAuthStateChanged(auth, (user) => {
 window.fazerLogin = async function() {
     const email = document.getElementById('emailInput').value;
     const pass = document.getElementById('passwordInput').value;
+    const remember = document.getElementById('rememberEmail').checked;
     const btn = document.getElementById('btnLogin');
     
     if(!email || !pass) return;
@@ -74,7 +82,17 @@ window.fazerLogin = async function() {
     document.getElementById('loginError').classList.add('hidden');
 
     try {
+        // Define para limpar a sessão ao fechar a aba/navegador
+        await setPersistence(auth, browserSessionPersistence);
         await signInWithEmailAndPassword(auth, email, pass);
+
+        // Gerencia a opção de lembrar o e-mail
+        if (remember) {
+            localStorage.setItem('saved_user_email', email);
+        } else {
+            localStorage.removeItem('saved_user_email');
+        }
+
     } catch (error) {
         console.error("Erro no login:", error);
         document.getElementById('loginError').classList.remove('hidden');
@@ -85,11 +103,45 @@ window.fazerLogin = async function() {
 
 window.fazerLogout = function() {
     signOut(auth).then(() => {
-        document.getElementById('emailInput').value = '';
         document.getElementById('passwordInput').value = '';
     }).catch((error) => {
         alert("Erro ao sair.");
     });
+}
+
+window.alterarSenha = async function() {
+    const newPass = document.getElementById('newPasswordInput').value;
+    const confirmPass = document.getElementById('confirmPasswordInput').value;
+    const msg = document.getElementById('passwordMsg');
+
+    msg.classList.remove('hidden', 'text-red-600', 'text-green-600');
+
+    if (!newPass || newPass.length < 6) {
+        msg.innerText = "A senha deve ter pelo menos 6 caracteres.";
+        msg.classList.add('text-red-600');
+        return;
+    }
+
+    if (newPass !== confirmPass) {
+        msg.innerText = "As senhas não coincidem.";
+        msg.classList.add('text-red-600');
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            await updatePassword(user, newPass);
+            msg.innerText = "Senha alterada com sucesso!";
+            msg.classList.add('text-green-600');
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('confirmPasswordInput').value = '';
+        } catch (error) {
+            console.error("Erro ao alterar senha:", error);
+            msg.innerText = "Erro ao alterar. Saia e entre novamente na conta por segurança.";
+            msg.classList.add('text-red-600');
+        }
+    }
 }
 
 // ================= CONTROLE DE NAVEGAÇÃO =================
@@ -97,16 +149,19 @@ window.fazerLogout = function() {
 window.switchTab = function(tabId) {
     document.getElementById('tab-analise').classList.add('hidden');
     document.getElementById('tab-historico').classList.add('hidden');
+    document.getElementById('tab-conta').classList.add('hidden');
     document.getElementById(tabId).classList.remove('hidden');
 
     document.getElementById('nav-analise').classList.remove('active');
     document.getElementById('nav-historico').classList.remove('active');
+    document.getElementById('nav-conta').classList.remove('active');
     
     if(tabId === 'tab-analise') document.getElementById('nav-analise').classList.add('active');
     if(tabId === 'tab-historico') {
         document.getElementById('nav-historico').classList.add('active');
         fetchHistoryFromFirebase();
     }
+    if(tabId === 'tab-conta') document.getElementById('nav-conta').classList.add('active');
 }
 
 // ================= PROCESSAMENTO DE PLANILHAS =================
@@ -235,17 +290,21 @@ function renderCharts() {
     });
 }
 
-// ================= SALVAR E RECUPERAR DO FIREBASE =================
+// ================= SALVAR E AUDITORIA (FIREBASE) =================
 
 window.saveCurrentReport = async function() {
     let total = 0;
     tableConfig.forEach(c => total += currentCounts[c.status]);
+
+    const user = auth.currentUser;
+    const authorEmail = user ? user.email : "Desconhecido";
 
     const now = new Date();
     const reportData = {
         timestamp: now.getTime(),
         dateLabel: now.toLocaleString('pt-BR'),
         total: total,
+        createdBy: authorEmail,
         counts: { ...currentCounts } 
     };
 
@@ -258,11 +317,11 @@ window.saveCurrentReport = async function() {
         alert("Relatório salvo na nuvem (Firebase) com sucesso!");
         
         btn.classList.add('hidden');
-        document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Salvo em ${reportData.dateLabel}`;
+        document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Salvo em ${reportData.dateLabel} por ${authorEmail}`;
         activeReportId = docRef.id;
     } catch (e) {
         console.error("Erro ao salvar documento: ", e);
-        alert("Erro ao salvar no banco. Verifique sua conexão e regras de acesso.");
+        alert("Erro ao salvar no banco. Verifique as regras de acesso.");
     } finally {
         btn.innerText = "💾 Salvar no Firebase";
         btn.disabled = false;
@@ -271,7 +330,7 @@ window.saveCurrentReport = async function() {
 
 async function fetchHistoryFromFirebase() {
     const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-blue-600 font-bold">Buscando relatórios na nuvem...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-blue-600 font-bold">Buscando relatórios na nuvem...</td></tr>';
 
     try {
         const q = query(reportsCollection, orderBy("timestamp", "desc"));
@@ -285,7 +344,7 @@ async function fetchHistoryFromFirebase() {
         renderHistoryTable();
     } catch (e) {
         console.error("Erro ao buscar histórico: ", e);
-        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-red-600 font-bold">Erro ao buscar dados. Verifique a autenticação.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-600 font-bold">Erro ao buscar dados. Verifique a autenticação.</td></tr>';
     }
 }
 
@@ -294,7 +353,7 @@ function renderHistoryTable() {
     tbody.innerHTML = '';
 
     if(historyCache.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Nenhum relatório salvo na nuvem ainda.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhum relatório salvo na nuvem ainda.</td></tr>`;
         return;
     }
 
@@ -304,6 +363,7 @@ function renderHistoryTable() {
         tr.innerHTML = `
             <td class="p-3 font-semibold">${item.dateLabel}</td>
             <td class="p-3 text-center"><span class="bg-gray-200 px-3 py-1 rounded-full text-gray-700 font-bold">${item.total}</span></td>
+            <td class="p-3 text-sm text-gray-600">${item.createdBy || 'Sistema'}</td>
             <td class="p-3 text-center flex justify-center gap-2">
                 <button onclick="loadReport('${item.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-bold shadow transition">
                     👁️ Visualizar
@@ -323,7 +383,7 @@ window.loadReport = function(id) {
         currentCounts = { ...report.counts };
         activeReportId = report.id;
         
-        document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Arquivo de ${report.dateLabel}`;
+        document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Arquivo de ${report.dateLabel} (Criado por: ${report.createdBy || 'Desconhecido'})`;
         document.getElementById('btnSave').classList.add('hidden'); 
         
         updateDashboard();
@@ -332,8 +392,13 @@ window.loadReport = function(id) {
 }
 
 window.deleteReport = async function(id) {
-    if(confirm("Tem certeza que deseja excluir permanentemente este relatório da nuvem?")) {
+    const user = auth.currentUser;
+    const deleterEmail = user ? user.email : "Desconhecido";
+
+    if(confirm(`Tem certeza que deseja excluir permanentemente este relatório?\n(Ação realizada por: ${deleterEmail})`)) {
         try {
+            console.warn(`[LOG DE AUDITORIA] O relatório ID ${id} foi EXCLUÍDO por ${deleterEmail} em ${new Date().toLocaleString()}`);
+
             await deleteDoc(doc(db, "relatorios", id));
             
             historyCache = historyCache.filter(r => r.id !== id);
@@ -346,7 +411,7 @@ window.deleteReport = async function(id) {
             }
             
             renderHistoryTable();
-            alert("Excluído com sucesso!");
+            alert("Excluído com sucesso! (Log de exclusão registrado)");
         } catch(e) {
             console.error("Erro ao excluir: ", e);
             alert("Erro ao excluir. Tente novamente.");
@@ -354,7 +419,7 @@ window.deleteReport = async function(id) {
     }
 }
 
-// ================= PDF GERADOR (COM FIX DE PARÁGRAFOS) =================
+// ================= PDF GERADOR =================
 
 function generateAnalysis() {
     let total = 0, scTotal = 0, atTotal = 0;
@@ -395,7 +460,7 @@ function generateAnalysis() {
 }
 
 window.generatePDF = function() {
-    window.scrollTo(0, 0); // Remove espaço em branco do html2pdf
+    window.scrollTo(0, 0); 
     generateAnalysis();
 
     const pdfTable = document.getElementById('pdfTable');

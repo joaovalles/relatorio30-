@@ -1,37 +1,4 @@
-/* Customização Tabela Principal no App */
-.dark-table th { background-color: #3f3f2b; color: #facc15; border: 1px solid #52525b; text-align: center; }
-.dark-table td { background-color: #18181b; color: #e4e4e7; border: 1px solid #52525b; padding: 8px; text-align: center; }
-.dark-table td:first-child { text-align: left; }
-
-/* Estilos das abas (Navegação) */
+.dark-table th { background-color: #3f3f2b; color: #facc15; padding: 10px; border: 1px solid #52525b; }
+.dark-table td { background-color: #18181b; color: #e4e4e7; padding: 8px; text-align: center; border: 1px solid #52525b; }
 .tab-btn { transition: all 0.3s; }
-.tab-btn.active { border-bottom: 4px solid #3b82f6; color: #1e3a8a; font-weight: bold; }
-
-/* Tela de Login */
-#loginScreen { z-index: 9999; }
-
-/* ========= CONFIGURAÇÕES RIGOROSAS PARA O PDF ========= */
-#pdfContent { display: none; }
-
-body.is-printing { background: white !important; overflow: visible !important; }
-body.is-printing .main-ui { display: none !important; }
-
-body.is-printing #pdfContent { 
-    display: block; 
-    width: 100%;
-    background: white; 
-    color: black; 
-    font-family: Arial, sans-serif; 
-    padding: 10px;
-}
-
-#pdfTable { width: 100%; border-collapse: collapse; page-break-inside: auto; margin-bottom: 30px;}
-#pdfTable tr { page-break-inside: avoid !important; page-break-after: auto !important; }
-#pdfTable thead { display: table-header-group; }
-#pdfTable tfoot { display: table-footer-group; }
-
-#pdfTable th { background-color: #f3f4f6; color: #111827; border: 1px solid #d1d5db; padding: 12px; text-align: center; font-weight: bold;}
-#pdfTable td { border: 1px solid #d1d5db; padding: 10px; text-align: center; color: #374151;}
-#pdfTable td:first-child { text-align: left; font-weight: bold;}
-
-.pdf-text-block p { page-break-inside: avoid; margin-bottom: 1rem; }
+.tab-btn.active { border-bottom: 4px solid #2563eb; color: #1e3a8a; font-weight: bold; }

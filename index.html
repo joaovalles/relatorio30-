@@ -3,170 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Pedidos 30h+ - PRO Cloud</title>
-    
-    <!-- Biblioteca Tailwind CSS (Restaurada) -->
+    <title>Análise de Pedidos 30h+</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans">
-
-    <!-- =========== TELA DE LOGIN =========== -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-900 absolute inset-0">
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-900 absolute inset-0 z-50">
         <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
             <h2 class="text-2xl font-bold text-center mb-6 text-blue-900">Acesso Restrito</h2>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">E-mail</label>
-                <input type="email" id="emailInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="seu@email.com">
-            </div>
-            
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">Senha</label>
-                <input type="password" id="passwordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
-            </div>
-
-            <div class="mb-6 flex items-center">
-                <input type="checkbox" id="rememberEmail" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                <label for="rememberEmail" class="ml-2 block text-sm text-gray-700">Lembrar meu e-mail</label>
-            </div>
-            
-            <button onclick="fazerLogin()" id="btnLogin" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition">
-                Entrar
-            </button>
-            <p id="loginError" class="text-red-500 text-sm mt-4 hidden text-center font-bold">Credenciais inválidas.</p>
+            <input type="email" id="emailInput" class="w-full p-3 mb-4 border rounded" placeholder="E-mail">
+            <input type="password" id="passwordInput" class="w-full p-3 mb-4 border rounded" placeholder="Senha">
+            <button onclick="window.fazerLogin()" class="w-full bg-blue-600 text-white p-3 rounded font-bold">Entrar</button>
         </div>
     </div>
 
-    <!-- =========== ÁREA DA INTERFACE (APP) =========== -->
-    <div class="main-ui hidden max-w-6xl mx-auto p-4 md:p-6">
-        
-        <!-- Cabeçalho -->
-        <header class="bg-blue-900 text-white p-6 rounded-t-lg shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="text-center md:text-left">
-                <h1 class="text-2xl font-bold">Dashboard - Pedidos Parados (30h+)</h1>
-                <p class="text-sm opacity-80">Gestão Operacional na Nuvem</p>
-            </div>
-            <div class="flex flex-wrap justify-center gap-4">
-                <button onclick="saveCurrentReport()" id="btnSave" class="hidden bg-yellow-500 hover:bg-yellow-400 text-blue-900 px-4 py-2 rounded font-bold shadow transition">
-                    💾 Salvar no Firebase
-                </button>
-                <label class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded cursor-pointer transition font-semibold flex items-center justify-center shadow-lg">
-                    <span>📁 Nova Análise</span>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
-                </label>
-                <button onclick="fazerLogout()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded cursor-pointer transition font-bold shadow-lg">
-                    Sair
-                </button>
+    <div class="main-ui hidden max-w-6xl mx-auto p-4">
+        <header class="bg-blue-900 text-white p-6 rounded-t-lg flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Dashboard - Pedidos Parados (30h+)</h1>
+            <div class="flex gap-2">
+                <button onclick="window.saveCurrentReport()" id="btnSave" class="hidden bg-yellow-500 text-black px-4 py-2 rounded font-bold">💾 Salvar</button>
+                <label class="bg-blue-600 px-4 py-2 rounded cursor-pointer font-bold">📁 Nova Análise<input type="file" class="hidden" onchange="window.handleFileUpload(event)"></label>
+                <button onclick="window.fazerLogout()" class="bg-red-600 px-4 py-2 rounded font-bold">Sair</button>
             </div>
         </header>
 
-        <!-- Navegação por Abas -->
-        <div class="bg-white shadow-md rounded-b-lg mb-6 flex border-b border-gray-200">
-            <button onclick="switchTab('tab-analise')" id="nav-analise" class="tab-btn active flex-1 py-4 text-center text-gray-600 hover:text-blue-800">
-                📊 Visão por Setores
-            </button>
-            <button onclick="switchTab('tab-historico')" id="nav-historico" class="tab-btn flex-1 py-4 text-center text-gray-600 hover:text-blue-800">
-                🗂️ Histórico (Nuvem)
-            </button>
-            <button onclick="switchTab('tab-conta')" id="nav-conta" class="tab-btn flex-1 py-4 text-center text-gray-600 hover:text-blue-800">
-                👤 Minha Conta
-            </button>
+        <div class="bg-white shadow-md rounded-b-lg mb-6 flex border-b">
+            <button onclick="window.switchTab('tab-analise')" class="tab-btn active flex-1 py-4 font-bold border-b-4 border-blue-600">📊 Visão Geral</button>
+            <button onclick="window.switchTab('tab-historico')" class="tab-btn flex-1 py-4">🗂️ Histórico</button>
+            <button onclick="window.switchTab('tab-conta')" class="tab-btn flex-1 py-4">👤 Minha Conta</button>
         </div>
 
-        <!-- ABA 1: ANÁLISE -->
         <div id="tab-analise" class="flex flex-col gap-6">
-            <div id="emptyState" class="bg-white p-12 text-center rounded-lg shadow-md text-gray-500">
-                <span class="text-4xl mb-4 block">📈</span>
-                <p class="text-lg">Carregue uma planilha para visualizar os dados por setor.</p>
-            </div>
-
+            <div id="emptyState" class="bg-white p-12 text-center rounded-lg shadow-md">Carregue uma planilha para iniciar.</div>
             <div id="uiArea" class="hidden flex-col gap-6">
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-blue-800 flex justify-between items-center">
-                    <p id="currentReportLabel" class="font-semibold">Relatório em exibição: Análise não salva.</p>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-900 p-6 rounded-lg text-white shadow-xl">
+                        <table class="w-full dark-table" id="mainTable"><thead><tr><th>Status</th><th>Setor</th><th>QTD</th></tr></thead><tbody id="tableBody"></tbody></table>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md"><canvas id="sectorChart" class="h-64"></canvas></div>
                 </div>
-
-                <!-- Barra de Ação Rápida -->
-                <div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border border-gray-300">
-                    <div>
-                        <h3 class="font-bold text-gray-800">Gerador de Mensagem</h3>
-                        <p class="text-xs text-gray-500">Copia o resumo formatado pronto para a equipe instantaneamente.</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="gerarEcopiarMensagem()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition shadow">
-                            📋 Gerar e Copiar Mensagem
-                        </button>
-                        <span id="copyMsg" class="text-green-600 font-bold text-sm hidden">✓ Copiado!</span>
-                    </div>
-                    <!-- Textarea totalmente oculta -->
+                <div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center border">
+                    <h3 class="font-bold">Mensagem Automática</h3>
+                    <button onclick="window.gerarEcopiarMensagem()" class="bg-green-600 text-white px-4 py-2 rounded font-bold text-sm">📋 Gerar e Copiar</button>
                     <textarea id="reportText" class="hidden"></textarea>
                 </div>
-
-                <!-- CONTAINERS POR SETOR -->
                 <div id="setoresContainer" class="grid grid-cols-1 gap-6"></div>
             </div>
         </div>
-
-        <!-- ABA 2: HISTÓRICO -->
-        <div id="tab-historico" class="hidden">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <h2 class="text-2xl font-bold text-gray-800">Relatórios Gerados</h2>
-                    <p class="text-gray-500">Armazenados de forma segura no Firebase</p>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100 text-gray-700">
-                                <th class="p-3 border text-left">Data do Relatório</th>
-                                <th class="p-3 border text-center">Total</th>
-                                <th class="p-3 border text-left">Criado por</th>
-                                <th class="p-3 border text-center">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <tr><td colspan="4" class="p-4 text-center">Carregando dados da nuvem...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ABA 3: MINHA CONTA -->
-        <div id="tab-conta" class="hidden">
-            <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Alterar Senha de Acesso</h2>
-                <p class="text-gray-500 text-sm mb-6">Para sua segurança, informe sua senha atual e a nova senha desejada.</p>
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Senha Atual</label>
-                    <input type="password" id="currentPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite sua senha atual">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
-                    <input type="password" id="newPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mínimo de 6 caracteres">
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Confirme a Nova Senha</label>
-                    <input type="password" id="confirmPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite novamente a nova senha">
-                </div>
-
-                <button onclick="alterarSenha()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition shadow">
-                    Atualizar Senha
-                </button>
-                <p id="passwordMsg" class="text-center font-bold mt-4 hidden"></p>
-            </div>
-        </div>
-
-    </div> 
-
-    <!-- Script principal -->
+        <div id="tab-historico" class="hidden"><div class="bg-white p-6 rounded-lg shadow-md"><table class="w-full"><tbody id="historyTableBody"></tbody></table></div></div>
+        <div id="tab-conta" class="hidden"><div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
+            <input type="password" id="currentPasswordInput" class="w-full p-3 mb-2 border rounded" placeholder="Senha Atual">
+            <input type="password" id="newPasswordInput" class="w-full p-3 mb-2 border rounded" placeholder="Nova Senha">
+            <button onclick="window.alterarSenha()" class="w-full bg-blue-600 text-white p-3 rounded font-bold">Atualizar</button>
+            <p id="passwordMsg" class="mt-4 text-center font-bold"></p>
+        </div></div>
+    </div>
     <script type="module" src="script.js"></script>
 </body>
 </html>

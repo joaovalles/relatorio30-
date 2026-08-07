@@ -108,15 +108,19 @@
                         </table>
                     </div>
 
-                    <!-- Mensagem Rápida -->
-                    <div class="bg-white p-6 rounded-lg shadow-md flex flex-col border border-gray-300">
-                        <h2 class="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Mensagem para a Equipe</h2>
-                        <textarea id="reportText" class="w-full flex-grow p-4 bg-gray-50 border rounded text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none" readonly></textarea>
+                    <!-- Mensagem em formato de Botão Único -->
+                    <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-center items-center border border-gray-300 gap-4">
+                        <h2 class="text-xl font-bold text-gray-800 text-center">Ações Rápidas de Envio</h2>
+                        <p class="text-sm text-gray-500 text-center">Gere e copie automaticamente a mensagem formatada para disparar à equipe.</p>
                         
-                        <button onclick="copyText()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded font-bold transition shadow text-lg flex justify-center items-center gap-2">
-                            📋 Copiar Mensagem
+                        <!-- Botão que substitui a caixa visível -->
+                        <button onclick="gerarEcopiarMensagem()" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-bold transition shadow-lg text-lg flex justify-center items-center gap-2">
+                            📋 Gerar e Copiar Mensagem para a Equipe
                         </button>
-                        <p id="copyMsg" class="text-green-600 font-bold mt-2 hidden text-center">Mensagem copiada!</p>
+                        <p id="copyMsg" class="text-green-600 font-bold hidden text-center">Mensagem gerada e copiada com sucesso!</p>
+                        
+                        <!-- Textarea invisível por padrão usada apenas para processamento -->
+                        <textarea id="reportText" class="hidden"></textarea>
                     </div>
                 </div>
 
@@ -132,10 +136,13 @@
                     </div>
                 </div>
 
-                <!-- Botão Relatório Gerencial -->
-                <div class="flex">
-                    <button onclick="generatePDF()" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded font-bold transition shadow-lg text-lg">
+                <!-- Botões de Exportação e Relatórios -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="generatePDF()" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded font-bold transition shadow-lg text-lg flex justify-center items-center gap-2">
                         📄 Baixar Relatório PDF (Executivo)
+                    </button>
+                    <button onclick="exportToExcelBySector()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-4 rounded font-bold transition shadow-lg text-lg flex justify-center items-center gap-2">
+                        📊 Exportar para Excel (Por Abas / Setor)
                     </button>
                 </div>
             </div>
@@ -171,8 +178,13 @@
         <div id="tab-conta" class="hidden">
             <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Alterar Senha de Acesso</h2>
-                <p class="text-gray-500 text-sm mb-6">Digite sua nova senha abaixo para atualizar suas credenciais.</p>
+                <p class="text-gray-500 text-sm mb-6">Para sua segurança, informe sua senha atual e a nova senha desejada.</p>
                 
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Senha Atual</label>
+                    <input type="password" id="currentPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite sua senha atual">
+                </div>
+
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
                     <input type="password" id="newPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mínimo de 6 caracteres">
@@ -180,7 +192,7 @@
 
                 <div class="mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Confirme a Nova Senha</label>
-                    <input type="password" id="confirmPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite novamente">
+                    <input type="password" id="confirmPasswordInput" class="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Digite novamente a nova senha">
                 </div>
 
                 <button onclick="alterarSenha()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition shadow">

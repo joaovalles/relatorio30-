@@ -1,7 +1,7 @@
 // Importações do Firebase SDK Modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, setPersistence, browserSessionPersistence, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
 // Suas credenciais do Firebase
 const firebaseConfig = {
@@ -46,7 +46,6 @@ let historyCache = [];
 document.addEventListener('DOMContentLoaded', () => {
     initCounts();
     
-    // Preenche o e-mail salvo anteriormente se houver
     const savedEmail = localStorage.getItem('saved_user_email');
     if (savedEmail) {
         document.getElementById('emailInput').value = savedEmail;
@@ -82,11 +81,9 @@ window.fazerLogin = async function() {
     document.getElementById('loginError').classList.add('hidden');
 
     try {
-        // Define para limpar a sessão ao fechar a aba/navegador
         await setPersistence(auth, browserSessionPersistence);
         await signInWithEmailAndPassword(auth, email, pass);
 
-        // Gerencia a opção de lembrar o e-mail
         if (remember) {
             localStorage.setItem('saved_user_email', email);
         } else {
@@ -110,35 +107,50 @@ window.fazerLogout = function() {
 }
 
 window.alterarSenha = async function() {
+    const currentPass = document.getElementById('currentPasswordInput').value;
     const newPass = document.getElementById('newPasswordInput').value;
     const confirmPass = document.getElementById('confirmPasswordInput').value;
     const msg = document.getElementById('passwordMsg');
 
     msg.classList.remove('hidden', 'text-red-600', 'text-green-600');
 
+    if (!currentPass) {
+        msg.innerText = "Informe a sua senha atual.";
+        msg.classList.add('text-red-600');
+        return;
+    }
+
     if (!newPass || newPass.length < 6) {
-        msg.innerText = "A senha deve ter pelo menos 6 caracteres.";
+        msg.innerText = "A nova senha deve ter pelo menos 6 caracteres.";
         msg.classList.add('text-red-600');
         return;
     }
 
     if (newPass !== confirmPass) {
-        msg.innerText = "As senhas não coincidem.";
+        msg.innerText = "As novas senhas não coincidem.";
         msg.classList.add('text-red-600');
         return;
     }
 
     const user = auth.currentUser;
-    if (user) {
+    if (user && user.email) {
         try {
+            const credential = EmailAuthProvider.credential(user.email, currentPass);
+            await reauthenticateWithCredential(user, credential);
             await updatePassword(user, newPass);
+            
             msg.innerText = "Senha alterada com sucesso!";
             msg.classList.add('text-green-600');
+            document.getElementById('currentPasswordInput').value = '';
             document.getElementById('newPasswordInput').value = '';
             document.getElementById('confirmPasswordInput').value = '';
         } catch (error) {
             console.error("Erro ao alterar senha:", error);
-            msg.innerText = "Erro ao alterar. Saia e entre novamente na conta por segurança.";
+            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                msg.innerText = "A senha atual está incorreta.";
+            } else {
+                msg.innerText = "Erro ao alterar. Tente sair e entrar novamente.";
+            }
             msg.classList.add('text-red-600');
         }
     }
@@ -248,13 +260,16 @@ function generateTextForTeam() {
     document.getElementById('reportText').value = texto;
 }
 
-window.copyText = function() {
+// Botão que gera e copia automaticamente sem precisar de caixa visível
+window.gerarEcopiarMensagem = function() {
+    generateTextForTeam(); // Atualiza o conteúdo oculto
     const textToCopy = document.getElementById('reportText');
     textToCopy.select();
     document.execCommand('copy');
+    
     const msg = document.getElementById('copyMsg');
     msg.classList.remove('hidden');
-    setTimeout(() => msg.classList.add('hidden'), 3000);
+    setTimeout(() => msg.classList.add('hidden'), 3500);
 }
 
 function renderCharts() {
@@ -288,6 +303,46 @@ function renderCharts() {
         data: { labels: statusLabels, datasets: [{ label: 'Qtd de Pedidos', data: statusData, backgroundColor: '#f59e0b', borderRadius: 4 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
     });
+}
+
+// ================= EXPORTAÇÃO EXCEL COM ABAS POR SETOR =================
+
+window.exportToExcelBySector = function() {
+    const wb = XLSX.utils.book_new();
+
+    // Identifica todos os setores dinamicamente baseados na configuração
+    const setoresUnicos = [...new Set(tableConfig.map(c => c.setor))];
+
+    setoresUnicos.forEach(setorNome => {
+        // Filtra os itens que pertencem a este setor
+        const dadosSetor = tableConfig
+            .filter(c => c.setor === setorNome)
+            .map(c => ({
+                "Status": c.status,
+                "Setor Responsável": c.setor,
+                "Quantidade de Pedidos": currentCounts[c.status]
+            }));
+
+        // Adiciona uma linha de totalizador ao final da aba do setor
+        const totalSetor = dadosSetor.reduce((acc, curr) => acc + curr["Quantidade de Pedidos"], 0);
+        dadosSetor.push({
+            "Status": "TOTAL GERAL DO SETOR",
+            "Setor Responsável": setorNome,
+            "Quantidade de Pedidos": totalSetor
+        });
+
+        // Cria a planilha para a aba
+        const ws = XLSX.utils.json_to_sheet(dadosSetor);
+        
+        // Formata o nome da aba (limpando caracteres inválidos para o Excel se houver)
+        const nomeAba = setorNome.replace(/[/\\?*[\]]/g, "").substring(0, 31);
+        
+        XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+    });
+
+    // Gera o arquivo Excel com as abas separadas e faz o download
+    const dataAtualStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+    XLSX.writeFile(wb, `Relatorio_Por_Setor_${dataAtualStr}.xlsx`);
 }
 
 // ================= SALVAR E AUDITORIA (FIREBASE) =================

@@ -86,32 +86,29 @@
                     <p id="currentReportLabel" class="font-semibold">Relatório em exibição: Análise não salva.</p>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Tabela -->
-                    <div class="bg-gray-900 p-6 rounded-lg shadow-xl overflow-x-auto">
-                        <h2 class="text-xl font-bold mb-4 text-white">Resumo de Status</h2>
-                        <table class="w-full dark-table border-collapse text-sm" id="mainTable">
-                            <thead>
-                                <tr>
-                                    <th>Status</th>
-                                    <th>Setor Responsável</th>
-                                    <th>QTD</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody"></tbody>
-                        </table>
-                    </div>
-
-                    <!-- Mensagem Rápida -->
-                    <div class="bg-white p-6 rounded-lg shadow-md flex flex-col border border-gray-300">
-                        <h2 class="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Mensagem para a Equipe</h2>
-                        <textarea id="reportText" class="w-full flex-grow p-4 bg-gray-50 border rounded text-sm font-mono text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none" readonly></textarea>
+                <!-- Tabela Ocupando Largura Total -->
+                <div class="bg-gray-900 p-6 rounded-lg shadow-xl overflow-x-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">Resumo de Status</h2>
                         
-                        <button onclick="copyText()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded font-bold transition shadow text-lg flex justify-center items-center gap-2">
-                            📋 Copiar Mensagem
-                        </button>
-                        <p id="copyMsg" class="text-green-600 font-bold mt-2 hidden text-center">Mensagem copiada!</p>
+                        <!-- Botão de Cópia Minimalista -->
+                        <div class="flex items-center gap-3">
+                            <span id="copyMsg" class="text-green-400 font-bold text-sm hidden transition-all">Copiado!</span>
+                            <button onclick="copyText()" class="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded shadow transition flex items-center justify-center border border-gray-600" title="Copiar Mensagem para a Equipe">
+                                📋
+                            </button>
+                        </div>
                     </div>
+                    <table class="w-full dark-table border-collapse text-sm" id="mainTable">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Setor Responsável</th>
+                                <th>QTD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
                 </div>
 
                 <!-- Gráficos -->
@@ -131,6 +128,11 @@
                     <button onclick="generatePDF()" class="w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded font-bold transition shadow-lg text-lg">
                         📄 Baixar Relatório PDF (Executivo)
                     </button>
+                </div>
+
+                <!-- Detalhamento de Pedidos por Setor (Gerado via JS) -->
+                <div id="sectorDetailsContainer" class="flex flex-col gap-6 w-full mt-2">
+                    <!-- Cards de tabelas detalhadas inseridos dinamicamente -->
                 </div>
             </div>
         </div>

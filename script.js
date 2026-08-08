@@ -38,17 +38,22 @@ const tableConfig = [
 ];
 
 let currentCounts = {};
+let sectorOrders = {}; 
 let chartInstanceSector = null;
 let chartInstanceStatus = null;
 let activeReportId = null; 
 let historyCache = []; 
+let currentTeamMessage = ""; // Variável global para armazenar a mensagem oculta
 
 document.addEventListener('DOMContentLoaded', () => {
     initCounts();
 });
 
 function initCounts() {
-    tableConfig.forEach(item => currentCounts[item.status] = 0);
+    tableConfig.forEach(item => {
+        currentCounts[item.status] = 0;
+        sectorOrders[item.setor] = [];
+    });
 }
 
 // ================= SISTEMA DE LOGIN E CONTA =================
@@ -159,7 +164,8 @@ window.handleFileUpload = function(event) {
         const workbook = XLSX.read(data, {type: 'array'});
         const sheetName = workbook.SheetNames.includes('PEDIDOS') ? 'PEDIDOS' : workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false });
         processNewData(jsonData);
     };
     reader.readAsArrayBuffer(file);
@@ -173,14 +179,24 @@ function processNewData(data) {
     data.forEach(row => {
         const rowNormalized = {};
         for(let key in row) { rowNormalized[key.trim().toLowerCase()] = row[key]; }
+        
         const idPedido = rowNormalized['idvenda'] || rowNormalized['pedido'] || '';
         const statusStr = (rowNormalized['status'] || '').toString().trim().toUpperCase();
+        
+        const dataStr = rowNormalized['datahora'] || rowNormalized['data'] || rowNormalized['data do pedido'] || rowNormalized['criado em'] || '-';
         
         if(!idPedido && statusStr === '') return;
 
         for (let config of tableConfig) {
             if (statusStr.includes(config.status) || config.status.includes(statusStr)) {
                 currentCounts[config.status]++;
+                
+                sectorOrders[config.setor].push({
+                    data: dataStr,
+                    pedido: idPedido,
+                    status: statusStr
+                });
+                
                 break;
             }
         }
@@ -199,8 +215,9 @@ function updateDashboard() {
     document.getElementById('uiArea').classList.add('flex');
 
     renderTable();
-    generateTextForTeam();
+    generateTextForTeam(); // Gera a string e armazena na memória
     renderCharts();
+    renderSectorDetails(); 
 }
 
 function renderTable() {
@@ -228,16 +245,23 @@ function generateTextForTeam() {
     });
 
     texto += `\nSegue planilha para acompanhamento:\nRELATÓRIO 30+`;
-    document.getElementById('reportText').value = texto;
+    
+    // Armazena a mensagem na variável de escopo global invés de um elemento textarea
+    currentTeamMessage = texto;
 }
 
 window.copyText = function() {
-    const textToCopy = document.getElementById('reportText');
-    textToCopy.select();
-    document.execCommand('copy');
-    const msg = document.getElementById('copyMsg');
-    msg.classList.remove('hidden');
-    setTimeout(() => msg.classList.add('hidden'), 3000);
+    // Utiliza a API moderna para copiar o texto guardado em currentTeamMessage
+    navigator.clipboard.writeText(currentTeamMessage).then(() => {
+        const msg = document.getElementById('copyMsg');
+        if(msg) {
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 3000);
+        }
+    }).catch(err => {
+        console.error('Erro ao copiar a mensagem: ', err);
+        alert("Ocorreu um erro ao copiar a mensagem automática.");
+    });
 }
 
 function renderCharts() {
@@ -273,6 +297,77 @@ function renderCharts() {
     });
 }
 
+// ================= RENDERIZAÇÃO DAS TABELAS DE DETALHAMENTO =================
+
+function renderSectorDetails() {
+    const container = document.getElementById('sectorDetailsContainer');
+    container.innerHTML = ''; 
+
+    const distinctSectors = [...new Set(tableConfig.map(c => c.setor))];
+
+    distinctSectors.forEach(setor => {
+        const orders = sectorOrders[setor] || [];
+        
+        if (orders.length === 0) return; 
+
+        const section = document.createElement('div');
+        section.className = 'bg-white p-6 rounded-lg shadow-md border border-gray-300 flex flex-col mt-4';
+
+        let rowsHtml = '';
+        orders.forEach(o => {
+            rowsHtml += `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3 border text-gray-700">${o.data}</td>
+                    <td class="p-3 border font-mono text-blue-800 font-bold">${o.pedido}</td>
+                    <td class="p-3 border text-gray-700 text-xs">${o.status}</td>
+                </tr>
+            `;
+        });
+
+        section.innerHTML = `
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4 border-b pb-3 gap-3">
+                <h3 class="text-xl font-bold text-gray-800">Detalhamento: ${setor}</h3>
+                <button onclick="copySectorData('${setor}')" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition flex items-center gap-2">
+                    📋 Copiar Dados para Planilha (${orders.length})
+                </button>
+            </div>
+            <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                <table class="w-full border-collapse text-sm">
+                    <thead class="sticky top-0 bg-gray-200 shadow-sm z-10">
+                        <tr class="text-gray-700">
+                            <th class="p-3 border text-left font-bold">Data</th>
+                            <th class="p-3 border text-left font-bold">Pedido</th>
+                            <th class="p-3 border text-left font-bold">Status Exato</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        container.appendChild(section);
+    });
+}
+
+window.copySectorData = function(setor) {
+    const orders = sectorOrders[setor] || [];
+    if(orders.length === 0) return;
+
+    let tsvData = "Data\tPedido\tStatus\n";
+    
+    orders.forEach(o => {
+        tsvData += `${o.data}\t${o.pedido}\t${o.status}\n`;
+    });
+
+    navigator.clipboard.writeText(tsvData).then(() => {
+        alert(`Dados dos pedidos de ${setor} copiados!\n\nAgora você pode dar "Ctrl+V" ou "Colar" diretamente no Excel ou Sheets.`);
+    }).catch(err => {
+        console.error('Erro ao copiar dados: ', err);
+        alert("Ocorreu um erro ao tentar copiar os dados para a área de transferência.");
+    });
+}
+
 // ================= SALVAR E AUDITORIA (FIREBASE) =================
 
 window.saveCurrentReport = async function() {
@@ -287,8 +382,9 @@ window.saveCurrentReport = async function() {
         timestamp: now.getTime(),
         dateLabel: now.toLocaleString('pt-BR'),
         total: total,
-        createdBy: authorEmail, // REGISTRO DE QUEM CRIOU
-        counts: { ...currentCounts } 
+        createdBy: authorEmail,
+        counts: { ...currentCounts },
+        orders: sectorOrders
     };
 
     const btn = document.getElementById('btnSave');
@@ -364,6 +460,14 @@ window.loadReport = function(id) {
     const report = historyCache.find(r => r.id === id);
     if(report) {
         currentCounts = { ...report.counts };
+        
+        if(report.orders) {
+            sectorOrders = report.orders;
+        } else {
+            initCounts(); 
+            currentCounts = { ...report.counts }; 
+        }
+        
         activeReportId = report.id;
         
         document.getElementById('currentReportLabel').innerText = `Relatório em exibição: Arquivo de ${report.dateLabel} (Criado por: ${report.createdBy || 'Desconhecido'})`;
@@ -380,7 +484,6 @@ window.deleteReport = async function(id) {
 
     if(confirm(`Tem certeza que deseja excluir permanentemente este relatório?\n(Ação realizada por: ${deleterEmail})`)) {
         try {
-            // LOG DE AUDITORIA NO CONSOLE
             console.warn(`[LOG DE AUDITORIA] O relatório ID ${id} foi EXCLUÍDO por ${deleterEmail} em ${new Date().toLocaleString()}`);
 
             await deleteDoc(doc(db, "relatorios", id));
